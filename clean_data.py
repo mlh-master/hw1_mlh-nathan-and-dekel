@@ -16,10 +16,10 @@ def rm_ext_and_nan(CTG_features, extra_feature):
     :param extra_feature: A feature to be removed
     :return: A dictionary of clean CTG called c_ctg
     """
-    # ------------------ IMPLEMENT YOUR CODE HERE:------------------------------
+    c_ctg={x: pd.to_numeric(CTG_features[x],errors="coerce").dropna() for x in CTG_features.drop(columns=[extra_feature])}
 
-    # --------------------------------------------------------------------------
     return c_ctg
+
 
 
 def nan2num_samp(CTG_features, extra_feature):
@@ -29,8 +29,14 @@ def nan2num_samp(CTG_features, extra_feature):
     :param extra_feature: A feature to be removed
     :return: A pandas dataframe of the dictionary c_cdf containing the "clean" features
     """
-    c_cdf = {}
     # ------------------ IMPLEMENT YOUR CODE HERE:------------------------------
+    c_cdf={}
+
+    for x in CTG_features.drop(columns=[extra_feature]):
+        c_cdf[x]=pd.to_numeric(CTG_features[x],errors="coerce")
+        forprob=c_cdf[x].dropna()
+        #c_cdf[x]=c_cdf[x].fillna(np.random.choice(forprob.unique(),p=list(forprob.value_counts(normalize=True))))
+        c_cdf[x] = c_cdf[x].apply(lambda x: np.random.choice(forprob) if (np.isnan(x)) else x)
 
     # -------------------------------------------------------------------------
     return pd.DataFrame(c_cdf)
@@ -43,7 +49,7 @@ def sum_stat(c_feat):
     :return: Summary statistics as a dicionary of dictionaries (called d_summary) as explained in the notebook
     """
     # ------------------ IMPLEMENT YOUR CODE HERE:------------------------------
-
+    d_summary={x:c_feat[x].describe()[3:].to_dict() for x in c_feat}
     # -------------------------------------------------------------------------
     return d_summary
 
@@ -57,7 +63,11 @@ def rm_outlier(c_feat, d_summary):
     """
     c_no_outlier = {}
     # ------------------ IMPLEMENT YOUR CODE HERE:------------------------------
-
+    for x in c_feat:
+        dx=d_summary[x]
+        outlierup = dx['75%']+1.5*(dx['75%']-dx['25%'])
+        outlierdown = dx['25%']-1.5*(dx['75%']-dx['25%'])
+        c_no_outlier[x] = c_feat[x].apply(lambda x: np.nan if ((x>outlierup) or (x<outlierdown)) else x)
     # -------------------------------------------------------------------------
     return pd.DataFrame(c_no_outlier)
 
@@ -71,7 +81,7 @@ def phys_prior(c_cdf, feature, thresh):
     :return: An array of the "filtered" feature called filt_feature
     """
     # ------------------ IMPLEMENT YOUR CODE HERE:-----------------------------
-
+    filt_feature=c_cdf[feature].loc[lambda s: s < thresh].to_numpy()
     # -------------------------------------------------------------------------
     return filt_feature
 
@@ -87,6 +97,26 @@ def norm_standard(CTG_features, selected_feat=('LB', 'ASTV'), mode='none', flag=
     """
     x, y = selected_feat
     # ------------------ IMPLEMENT YOUR CODE HERE:------------------------------
+    nsd_res=CTG_features.copy()
+    if mode!='none':
+        for columns in nsd_res:
+            min, max=nsd_res[columns].min(),nsd_res[columns].max()
+            mean,std=nsd_res[columns].mean(),nsd_res[columns].std()
+            if mode=='mean':
+                nsd_res[columns]=nsd_res[columns].apply(lambda x: (x-mean)/(max-min))
+            elif mode=='MinMax':
+                nsd_res[columns]=nsd_res[columns].apply(lambda x: (x - min) / (max - min))
+            else:
+                nsd_res[columns]=nsd_res[columns].apply(lambda x: (x - mean) /std)
+    if flag==True:
+        xlbl = ['%','beats/min']
+        axarr = nsd_res.hist(column=[x,y], bins=100, layout=(1, 2), figsize=(10, 5))
+        for i, ax in enumerate(axarr.flatten()):
+            ax.set_xlabel(xlbl[i])
+            ax.set_ylabel("Count")
+        plt.show()
+
 
     # -------------------------------------------------------------------------
-    return pd.DataFrame(nsd_res)
+    #return pd.DataFrame(nsd_res)
+    return nsd_res
