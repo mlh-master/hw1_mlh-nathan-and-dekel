@@ -95,7 +95,7 @@ def norm_standard(CTG_features, selected_feat=('LB', 'ASTV'), mode='none', flag=
     :param flag: A boolean determining whether or not plot a histogram
     :return: Dataframe of the normalized/standardazied features called nsd_res
     """
-    x, y = selected_feat
+
     # ------------------ IMPLEMENT YOUR CODE HERE:------------------------------
     nsd_res=CTG_features.copy()
     if mode!='none':
@@ -108,15 +108,25 @@ def norm_standard(CTG_features, selected_feat=('LB', 'ASTV'), mode='none', flag=
                 nsd_res[columns]=nsd_res[columns].apply(lambda x: (x - min) / (max - min))
             else:
                 nsd_res[columns]=nsd_res[columns].apply(lambda x: (x - mean) /std)
+
     if flag==True:
-        xlbl = ['%','beats/min']
-        axarr = nsd_res.hist(column=[x,y], bins=100, layout=(1, 2), figsize=(10, 5))
-        for i, ax in enumerate(axarr.flatten()):
-            ax.set_xlabel(xlbl[i])
-            ax.set_ylabel("Count")
+        x, y = selected_feat
+        n_bins = 100
+        if mode == 'none':
+            xlbl = ['%','beats/min']
+            axarr = nsd_res.hist(column=[x,y], bins=n_bins, layout=(1, 2), figsize=(10, 5))
+            for i, ax in enumerate(axarr.flatten()):
+                ax.set_xlabel(xlbl[i])
+                ax.set_ylabel("Count")
+        else:
+            plt.hist(nsd_res[x], bins=n_bins)
+            plt.hist(nsd_res[y], bins=n_bins)
+            plt.legend([x, y])
+            plt.ylabel("Count")
+            plt.title([mode])
+
         plt.show()
 
 
     # -------------------------------------------------------------------------
-    #return pd.DataFrame(nsd_res)
     return nsd_res

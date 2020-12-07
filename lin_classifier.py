@@ -19,6 +19,12 @@ def pred_log(logreg, X_train, y_train, X_test, flag=False):
     :return: A two elements tuple containing the predictions and the weightning matrix
     """
     # ------------------ IMPLEMENT YOUR CODE HERE:-----------------------------
+    logreg.fit(X_train, y_train)
+    w_log=logreg.coef_
+    if not flag:
+        y_pred_log=logreg.predict(X_test)
+    else:
+        y_pred_log=logreg.predict_proba(X_test)
 
     # -------------------------------------------------------------------------
     return y_pred_log, w_log
@@ -80,9 +86,18 @@ def cv_kfold(X, y, C, penalty, K, mode):
             logreg = LogisticRegression(solver='saga', penalty=p, C=c, max_iter=10000, multi_class='ovr')
             loss_val_vec = np.zeros(K)
             k = 0
+            d = {}
             for train_idx, val_idx in kf.split(X, y):
                 x_train, x_val = X.iloc[train_idx], X.iloc[val_idx]
         # ------------------ IMPLEMENT YOUR CODE HERE:-----------------------------
+                y_pred,w = pred_log(logreg, nsd(x_train, ('',''), mode=mode), y[train_idx], nsd(x_val, ('',''), mode=mode), flag=True)
+                loss_val_vec[k]= log_loss(y[val_idx], y_pred)
+                k+=1
+            d['mu'] = loss_val_vec.mean()
+            d['sigma'] = np.std(loss_val_vec)
+            d['C'] = c
+            d['penalty'] = p
+            validation_dict.append(d)
 
         # --------------------------------------------------------------------------
     return validation_dict
@@ -98,7 +113,11 @@ def odds_ratio(w, X, selected_feat='LB'):
              odds_ratio: the odds ratio of the selected feature and label
     """
     # ------------------ IMPLEMENT YOUR CODE HERE:-----------------------------
-
+    col = X.columns.get_loc(selected_feat)
+    wt = np.transpose(w[0, :])
+    odds = np.exp(X @ wt)
+    odds = np.median(odds)
+    odd_ratio = np.exp(wt[col])
     # --------------------------------------------------------------------------
 
     return odds, odd_ratio
