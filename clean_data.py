@@ -35,7 +35,6 @@ def nan2num_samp(CTG_features, extra_feature):
     for x in CTG_features.drop(columns=[extra_feature]):
         c_cdf[x]=pd.to_numeric(CTG_features[x],errors="coerce")
         forprob=c_cdf[x].dropna()
-        #c_cdf[x]=c_cdf[x].fillna(np.random.choice(forprob.unique(),p=list(forprob.value_counts(normalize=True))))
         c_cdf[x] = c_cdf[x].apply(lambda x: np.random.choice(forprob) if (np.isnan(x)) else x)
 
     # -------------------------------------------------------------------------
